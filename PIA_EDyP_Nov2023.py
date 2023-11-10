@@ -507,7 +507,281 @@ while True:
     elif menu_principal == "3":
         pass
     elif menu_principal == "4":
-        pass
+        while True:
+            print("""
+            ╔════════════════════════════════════════╗
+            ║           ESTADÍSTICAS                 ║
+            ╟────────────────────────────────────────╢
+            ║ 1. Servicios más prestados.            ║
+            ║ 2. Clientes con más notas.             ║
+            ║ 3. Promedio de los montos de las notas.║ 
+            ║ 4. Volver al menú de servicios.        ║
+            ╚════════════════════════════════════════╝
+            """)
+            menu_estadisticas = input("Ingrese una opción: ").strip()
+            if menu_estadisticas == "1":
+                while True:
+                    cantidad = input("Ingrese la cantidad de servicios mas solicitados").strip()
+                    try:
+                        cantidad = int(cantidad)
+                    except Exception:
+                        print("EL DATO NO ES NUMÉRICO ENTERO.INTENTE NUEVAMENTE.")
+                        continue
+                    else:
+                        if cantidad == 0:
+                            print("LA CANTIDAD DE SERVIVIOS TIENE QUE SER MAYOR A 0. INTENTE NUEVAMENTE.")
+                            continue
+                        else:
+                            break
+                while True:
+                    fecha_inicial_str = input("Fecha inicial (dd-mm-aaaa):\n ").strip()
+                
+                    if fecha_inicial_str =="":
+                        print("NO SE PUEDE OMITIR EL DATO.")
+                        continue
+                    elif not re.match(patron_fecha, fecha_inicial_str):
+                        print("FORMATO DE FECHA INCORRECTO. DEBE SER DD-MM-AAAA")
+                        continue
+                    try:
+                        fecha_inicial = datetime.datetime.strptime(fecha_inicial_str, "%d-%m-%Y")
+                    except Exception:
+                        print("LA FECHA NO EXISTE. INTENTE DENUEVO.")
+                        continue
+                    else:
+                        break
+                while True:     
+                    fecha_final_str = input("Fecha final (dd-mm-aaaa):\n ").strip()
+                    
+                    if fecha_final_str =="":
+                        print("NO SE PUEDE OMITIR EL DATO.")
+                    elif not re.match(patron_fecha, fecha_final_str):
+                        print("FORMATO DE FECHA INCORRECTO. DEBE SER DD-MM-AAAA")
+                        continue
+                    try:
+                        fecha_final = datetime.datetime.strptime(fecha_final_str, "%d-%m-%Y")
+                        if not fecha_final>=fecha_inicial:
+                            print("LA FECHA FINAL DEBE SER IGUAL O POSTERIOR A LA FECHA INICIAL.INTENTE NUEVAMENTE.")
+                            continue
+                    except Exception:
+                        print("LA FECHA NO EXISTE. INTENTE DENUEVO.")
+                        continue
+                    else:
+                        break
+                try:
+                    with sqlite3.connect('notas.db', detect_types=sqlite3.PARSE_DECLTYPES | sqlite3.PARSE_COLNAMES) as conn:
+                        mi_cursor = conn.cursor()
+                        mi_cursor.execute("SELECT s.nombre_servicio, COUNT(dn.id_detalle) AS servicios_prestados\
+                        FROM servicios s\
+                        INNER JOIN detalles_notas dn ON s.id_servicio = dn.id_servicio\
+                        INNER JOIN notas n ON dn.id_nota = n.id_nota\
+                        WHERE n.fecha_nota BETWEEN ? AND ?\
+                        GROUP BY s.nombre_servicio\
+                        ORDER BY servicios_prestados DESC\
+                        LIMIT ?",(fecha_inicial,fecha_final,cantidad))
+                        resultados = mi_cursor.fetchall()
+                        if resultados:  
+                            print(f"{'Nombre del Servicio':<30} {'Cantidad Prestada':<10}")
+                            print("-" * 40)
+                            for nombre, cantidad in resultados:
+                                print(f"{nombre:<30} {cantidad:<10}")
+                            while True:
+                                formato= input("Ingrese el formato de exportación ([C]SV o [E]xcel /  (Enter para omitir)): ").upper()
+                                if formato == 'C':
+                                    nombre_archivo = f"ReporteServiciosMasPrestados_{fecha_inicial.strftime('%d-%m-%Y')}_{fecha_final.strftime('%d-%m-%Y')}.csv"
+                                    try:
+                                        with open(nombre_archivo, 'w', newline='') as archivo_csv:
+                                            escritor = csv.writer(archivo_csv)
+                                            escritor.writerow(["nombre_servicio", "Cantidad_Prestada"])
+                                            for servicio, cantidad in resultados:
+                                                escritor.writerow([servicio, cantidad])
+                                        print(f'\nSe han guardado los datos en {nombre_archivo}\n')
+                                        break
+                                    except Exception as e:
+                                        print(f'Error al guardar los datos en el archivo CSV: {e}')
+                                elif formato == 'E':
+                                    nombre_archivo = f"ReporteServiciosMasPrestados_{fecha_inicial.strftime('%d-%m-%Y')}_{fecha_final.strftime('%d-%m-%Y')}.xlsx"
+                                    libro = openpyxl.Workbook()
+                                    hoja = libro.active
+                                    hoja.title = "Servicios"
+                                    hoja.append(["Nombre del servicio", "Cantidad de servicio"])
+                                    for nombre, cantidad in resultados:
+                                        hoja.append([nombre,cantidad])
+                                    hoja.column_dimensions["A"].width = 30
+                                    hoja.column_dimensions["B"].width = 20
+                                    libro.save(nombre_archivo)
+                                    print(f"\nReporte exportado a {nombre_archivo}\n")
+                                    break
+                                elif formato == "":
+                                    print("\nSe omitio la Exportación\n")
+                                    break
+                                else:
+                                    print("Formato de exportación no válido. No se ha exportado el reporte.")
+                                    continue
+                        else:
+                            print("NO HAY SERVICIOS REGISTRADOS")
+                except sqlite3.Error as e:
+                    print(e)
+                except Exception as ex:
+                    print(f"Se produjo el siguiente error: {ex}")
+            elif menu_estadisticas == "2":
+                while True:
+                    cantidad = input("Ingrese cantidad de clientes con más notas a identificar").strip()
+                    try:
+                        cantidad = int(cantidad)
+                    except Exception:
+                        print("EL DATO NO ES NUMÉRICO ENTERO.INTENTE NUEVAMENTE.")
+                        continue
+                    else:
+                        if cantidad == 0:
+                            print("LA CANTIDAD DE CLIENTES TIENE QUE SER MAYOR A 0. INTENTE NUEVAMENTE.")
+                            continue
+                        else:
+                            break
+                while True:
+                    fecha_inicial_str = input("Fecha inicial (dd-mm-aaaa):\n ").strip()
+                
+                    if fecha_inicial_str =="":
+                        print("NO SE PUEDE OMITIR EL DATO.")
+                        continue
+                    elif not re.match(patron_fecha, fecha_inicial_str):
+                        print("FORMATO DE FECHA INCORRECTO. DEBE SER DD-MM-AAAA")
+                        continue
+                    try:
+                        fecha_inicial = datetime.datetime.strptime(fecha_inicial_str, "%d-%m-%Y")
+                    except Exception:
+                        print("LA FECHA NO EXISTE. INTENTE DENUEVO.")
+                        continue
+                    else:
+                        break
+                while True:     
+                    fecha_final_str = input("Fecha final (dd-mm-aaaa):\n ").strip()
+                    
+                    if fecha_final_str =="":
+                        print("NO SE PUEDE OMITIR EL DATO.")
+                    elif not re.match(patron_fecha, fecha_final_str):
+                        print("FORMATO DE FECHA INCORRECTO. DEBE SER DD-MM-AAAA")
+                        continue
+                    try:
+                        fecha_final = datetime.datetime.strptime(fecha_final_str, "%d-%m-%Y")
+                        if not fecha_final>=fecha_inicial:
+                            print("LA FECHA FINAL DEBE SER IGUAL O POSTERIOR A LA FECHA INICIAL.INTENTE NUEVAMENTE.")
+                            continue
+                    except Exception:
+                        print("LA FECHA NO EXISTE. INTENTE DENUEVO.")
+                        continue
+                    else:
+                        break
+                try:
+                    with sqlite3.connect('notas.db', detect_types=sqlite3.PARSE_DECLTYPES | sqlite3.PARSE_COLNAMES) as conn:
+                        mi_cursor = conn.cursor()
+                        mi_cursor.execute("SELECT c.nombre_cliente, COUNT(n.id_nota) AS cantidad_notas\
+                        FROM clientes c\
+                        INNER JOIN notas n ON c.id_cliente = n.id_cliente\
+                        WHERE n.fecha_nota BETWEEN ? AND ?\
+                        GROUP BY c.nombre_cliente\
+                        ORDER BY cantidad_notas DESC\
+                        LIMIT ?",(fecha_inicial,fecha_final,cantidad))
+                        resultados = mi_cursor.fetchall()
+                        if resultados:  
+                            print(f"{'Nombre del cliente':<30} {'Notas del cliente':<10}")
+                            print("-" * 40)
+                            for nombre, cantidad in resultados:
+                                print(f"{nombre:<30} {cantidad:<10}")
+                            while True:
+                                formato= input("Ingrese el formato de exportación ([C]SV o [E]xcel /  (Enter para omitir)): ").upper()
+                                if formato == 'C':
+                                    nombre_archivo = f"ReporteClientesConMasNotas_{fecha_inicial.strftime('%d-%m-%Y')}_{fecha_final.strftime('%d-%m-%Y')}.csv"
+                                    try:
+                                        with open(nombre_archivo, 'w', newline='') as archivo_csv:
+                                            escritor = csv.writer(archivo_csv)
+                                            escritor.writerow(["Nombre_cliente", "Cantidad_nota"])
+                                            for nombre, cantidad in resultados:
+                                                escritor.writerow([nombre, cantidad])
+                                        print(f'\nSe han guardado los datos en {nombre_archivo}\n')
+                                        break
+                                    except Exception as e:
+                                        print(f'Error al guardar los datos en el archivo CSV: {e}')
+                                elif formato == 'E':
+                                    nombre_archivo = f"ReporteClientesConMasNotas_{fecha_inicial.strftime('%d-%m-%Y')}_{fecha_final.strftime('%d-%m-%Y')}.xlsx"
+                                    libro = openpyxl.Workbook()
+                                    hoja = libro.active
+                                    hoja.title = "Clientes"
+                                    hoja.append(["Nombre del cliente", "Cantidad de notas"])
+                                    for nombre, cantidad in resultados:
+                                        hoja.append([nombre,cantidad])
+                                    hoja.column_dimensions["A"].width = 30
+                                    hoja.column_dimensions["B"].width = 20
+                                    libro.save(nombre_archivo)
+                                    print(f"\nReporte exportado a {nombre_archivo}\n")
+                                    break
+                                elif formato == "":
+                                    print("\nSe omitio la Exportación\n")
+                                    break
+                                else:
+                                    print("Formato de exportación no válido. No se ha exportado el reporte.")
+                                    continue
+                        else:
+                            print("NO HAY SERVICIOS REGISTRADOS")
+                except sqlite3.Error as e:
+                    print(e)
+                except Exception as ex:
+                    print(f"Se produjo el siguiente error: {ex}")
+            elif menu_estadisticas == "3":
+                while True:
+                    fecha_inicial_str = input("Fecha inicial (dd-mm-aaaa):\n ").strip()
+                
+                    if fecha_inicial_str =="":
+                        print("NO SE PUEDE OMITIR EL DATO.")
+                        continue
+                    elif not re.match(patron_fecha, fecha_inicial_str):
+                        print("FORMATO DE FECHA INCORRECTO. DEBE SER DD-MM-AAAA")
+                        continue
+                    try:
+                        fecha_inicial = datetime.datetime.strptime(fecha_inicial_str, "%d-%m-%Y")
+                    except Exception:
+                        print("LA FECHA NO EXISTE. INTENTE DENUEVO.")
+                        continue
+                    else:
+                        break
+                while True:     
+                    fecha_final_str = input("Fecha final (dd-mm-aaaa):\n ").strip()
+                    
+                    if fecha_final_str =="":
+                        print("NO SE PUEDE OMITIR EL DATO.")
+                    elif not re.match(patron_fecha, fecha_final_str):
+                        print("FORMATO DE FECHA INCORRECTO. DEBE SER DD-MM-AAAA")
+                        continue
+                    try:
+                        fecha_final = datetime.datetime.strptime(fecha_final_str, "%d-%m-%Y")
+                        if not fecha_final>=fecha_inicial:
+                            print("LA FECHA FINAL DEBE SER IGUAL O POSTERIOR A LA FECHA INICIAL.INTENTE NUEVAMENTE.")
+                            continue
+                    except Exception:
+                        print("LA FECHA NO EXISTE. INTENTE DENUEVO.")
+                        continue
+                    else:
+                        break
+                try:
+                    with sqlite3.connect('notas.db', detect_types=sqlite3.PARSE_DECLTYPES | sqlite3.PARSE_COLNAMES) as conn:
+                        mi_cursor = conn.cursor()
+                        mi_cursor.execute("SELECT AVG(monto_a_pagar) FROM notas \
+                        WHERE fecha_nota BETWEEN ? AND ?",(fecha_inicial,fecha_final))
+                        resultado = mi_cursor.fetchone()
+                        if resultado is not None and resultado[0] is not None:
+                            promedio = resultado[0]
+                            print("-" * 35)
+                            print(f"Promedio de las notas\nPeríodo: {fecha_inicial.strftime('%d-%m-%Y')}----{fecha_final.strftime('%d-%m-%Y')}:")
+                            print(f"{promedio:>15.2f}\nMoneda: Pesos")
+                            print("-" * 35)
+                        else:
+                            print(f"No se encontraron montos de notas con los cuales sacar un promedio en el período:\n{fecha_inicial.strftime('%d-%m-%Y')}----{fecha_final.strftime('%d-%m-%Y')}")
+                except sqlite3.Error as e:
+                    print(e)
+                except Exception as ex:
+                    print(f"Se produjo el siguiente error: {ex}")
+            elif menu_estadisticas == "4":
+                print("\nFuera del menu de estadísticas...\n")
+                break
     elif menu_principal == "5":
         pass
     else:
