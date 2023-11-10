@@ -71,3 +71,32 @@ def imprimir_nota(id_nota):
             print(f"{id_servicio:<15} {nombre_servicio:<25} {costo_servicio:<10.2f}")
 
         print(f"Monto a Pagar: {monto_a_pagar:.2f}")
+id_nota = 1
+fecha_actual =datetime.datetime.now()
+patron_fecha = r"^\d{2}-\d{2}-\d{4}$"
+
+while True:
+    print("""
+    ╔══════════════════════╗
+    ║   Menu Principal     ║
+    ╠══════════════════════╣
+    ║ 1. Notas             ║
+    ║ 2. Clientes          ║
+    ║ 3. Servicios         ║
+    ║ 4. Estadísticas      ║ 
+    ║ 5. Salir             ║ 
+    ╚══════════════════════╝
+    """)
+    menu_principal = input("Ingrese una opción: ")
+    if menu_principal == "1":
+        pass
+    elif menu_principal == "2":
+        pass
+    elif menu_principal == "3":
+        pass
+    elif menu_principal == "4":
+        pass
+    elif menu_principal == "5":
+        pass
+    else:
+        print("OPCIÓN NO VALIDA. INTENTE NUEVAMENTE.")
