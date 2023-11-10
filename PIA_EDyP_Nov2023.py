@@ -213,11 +213,290 @@ while True:
                     print(f"Se produjo el siguiente error: {ex}")
                 imprimir_nota(id_nota)
             elif menu_notas == "2":
-                pass
+                while True:
+                    folio_cancelar = input("\nIngrese el folio de la nota a cancelar/ 0 para ingresar al menú anterior: ").strip()
+            
+                    if folio_cancelar=="":
+                        print("EL DATO NO PUEDE OMITIRSE. INTENTE DENUEVO.")
+                        continue
+
+                    if folio_cancelar=="0":
+                        break
+                    with sqlite3.connect('notas.db') as conn:
+                        mi_cursor = conn.cursor()
+                        mi_cursor.execute("SELECT estado_nota FROM notas WHERE id_nota = ? AND estado_nota = 'ACTIVO'", (folio_cancelar,))
+                        estado_nota = mi_cursor.fetchone()
+                        if estado_nota is not None:
+                            estado_nota = estado_nota[0]
+                        
+                            if estado_nota == "ACTIVO":
+                                imprimir_nota(folio_cancelar)
+                                while True:
+                                    respuesta = input("Seguro que quiere cancelar esta nota?: S/N").strip().upper()
+                                    if respuesta == "S":
+                                        mi_cursor.execute("UPDATE notas SET estado_nota = 'CANCELADO' WHERE id_nota  = ?", (folio_cancelar,))
+                                        print("Nota cancelada con éxito.")
+                                        break
+                                    elif respuesta =="N":
+                                        print(f"la nota: {folio_cancelar} no fue cancelada")
+                                        break
+                                    else:
+                                        print("OPCIÓN NO VALIDA. INTENTE NUEVAMENTE.")
+                                        continue
+                            else:
+                                print(f"No se encontró una nota con el folio {folio_cancelar}.")
+                        else:
+                            print(f"No se encontró una nota con el folio {folio_cancelar}.")
+                    break 
             elif menu_notas == "3":
-                pass
+                try:
+                    with sqlite3.connect('notas.db', detect_types=sqlite3.PARSE_DECLTYPES | sqlite3.PARSE_COLNAMES) as conn:
+                        mi_cursor = conn.cursor()
+  
+
+                        mi_cursor.execute("SELECT n.id_nota, n.fecha_nota, c.nombre_cliente, c.RFC_cliente, c.correo_cliente, n.monto_a_pagar \
+                                        FROM notas n \
+                                        INNER JOIN clientes c ON n.id_cliente = c.id_cliente \
+                                        WHERE n.estado_nota = 'CANCELADO'")
+
+                        resultados = mi_cursor.fetchall()
+
+                        if resultados:
+                            print(f"{'ID Nota':<10}| {'Fecha_Nota':<12}| {'Cliente':<25}| {'RFC':<15}| {'Correo':<30}| {'Monto a Pagar':<15}")
+                            print("*" * 110)
+
+                            for id_nota, fecha_nota, nombre_cliente, RFC_cliente, correo_cliente, monto_a_pagar in resultados:
+                                id_nota_str = str(id_nota).ljust(10)
+                                fecha_nota_str = fecha_nota.strftime('%d-%m-%Y').ljust(12)
+                                nombre_cliente_str = nombre_cliente.ljust(25)
+                                RFC_cliente_str = RFC_cliente.ljust(15)
+                                correo_cliente_str = correo_cliente.ljust(30)
+                                monto_a_pagar_str = f"{monto_a_pagar:.2f}".ljust(15)
+                                print(f"{id_nota_str}| {fecha_nota_str}| {nombre_cliente_str}| {RFC_cliente_str}| {correo_cliente_str}| {monto_a_pagar_str}")
+                                print("-" * 110)
+                        else:
+                            print("No se encontraron notas canceladas.")
+                            break
+                except sqlite3.Error as e:
+                    print(e)
+                except Exception as ex:
+                    print(f"Se produjo el siguiente error: {ex}")
+                while True:
+                    folio_recuperar = input("\nIngrese el folio de la nota a recuperar/ 0 para ingresar al menú principal: ").strip()
+            
+                    if folio_recuperar=="":
+                        print("EL DATO NO PUEDE OMITIRSE. INTENTE DENUEVO.")
+                        continue
+
+                    if folio_recuperar=="0":
+                        break
+                    
+                    with sqlite3.connect('notas.db') as conn:
+                        mi_cursor = conn.cursor()
+                        mi_cursor.execute("SELECT estado_nota FROM notas WHERE id_nota = ? AND estado_nota = 'CANCELADO' ", (folio_recuperar,))
+                        estado_nota = mi_cursor.fetchone()
+                        if estado_nota is not None:
+                            estado_nota = estado_nota[0]
+                        
+                            if estado_nota == "CANCELADO":
+                                imprimir_nota(folio_recuperar)
+                                while True:
+                                    respuesta = input("\nSeguro que quiere recuperar esta nota?: S/N").strip().upper()
+                                    if respuesta == "S":
+                                        mi_cursor.execute("UPDATE notas SET estado_nota = 'ACTIVO' WHERE id_nota = ?", (folio_recuperar,))
+                                        print("Nota recuperada con éxito.")
+                                        break
+                                    elif respuesta =="N":
+                                        print(f"la nota: {folio_recuperar} no fue recuperada")
+                                        break
+                                    else:
+                                        print("OPCIÓN NO VALIDA. INTENTE NUEVAMENTE.")
+                                        continue
+                            else:
+                                print(f"No se encontró una nota con el folio {folio_recuperar}.")
+                                
+                        else:
+                            print(f"No se encontró una nota con el folio {folio_recuperar}.")
+                            continue
             elif menu_notas == "4":
-                pass
+                while True:
+                    print("""
+                    ╔════════════════════════════╗
+                    ║    CONSULTAS Y REPORTES    ║
+                    ╟────────────────────────────╢
+                    ║ 1. Consultar por período.  ║
+                    ║ 2. Consultar por folio.    ║
+                    ║ 3. Volver al menú de notas ║
+                    ╚════════════════════════════╝
+                    """)
+                    menu_consulta_nota = input("Ingrese una opción del menú de consunsultas y reportes: ")
+                    if menu_consulta_nota == "1":
+                        try:
+                            with sqlite3.connect('notas.db', detect_types=sqlite3.PARSE_DECLTYPES | sqlite3.PARSE_COLNAMES) as conn:
+                                mi_cursor = conn.cursor()
+                                
+                                while True:
+                                    print("\nDejar en blanco para usar 01-01-2000")
+                                    fecha_inicial_str = input("Fecha inicial (dd-mm-aaaa):\n ").strip()
+                                
+                                    if fecha_inicial_str =="":
+                                        print("Se utilizará la fecha por defecto: 01-01-2000.")
+                                        fecha_inicial = datetime.datetime(2000, 1, 1)
+                                        break
+                                    elif not re.match(patron_fecha, fecha_inicial_str):
+                                        print("FORMATO DE FECHA INCORRECTO. DEBE SER DD-MM-AAAA")
+                                        continue
+                                    try:
+                                        fecha_inicial = datetime.datetime.strptime(fecha_inicial_str, "%d-%m-%Y")
+                                    except Exception:
+                                        print("LA FECHA NO EXISTE. INTENTE DENUEVO.")
+                                        continue
+                                    else:
+                                        break
+                                    
+                                while True:
+                                    print("\nDejar en blanco para usar la fecha actual del sistema.")       
+                                    fecha_final_str = input("Fecha final (dd-mm-aaaa):\n ")
+                                    
+                                    if fecha_final_str =="":
+                                        print("Se utilizará la fecha actual del sistema.")
+                                        fecha_final=fecha_actual
+                                        break
+                                    elif not re.match(patron_fecha, fecha_final_str):
+                                        print("FORMATO DE FECHA INCORRECTO. DEBE SER DD-MM-AAAA")
+                                        continue
+                                    
+                                    try:
+                                        fecha_final = datetime.datetime.strptime(fecha_final_str, "%d-%m-%Y")
+                                        if not fecha_final>=fecha_inicial:
+                                            print("LA FECHA FINAL DEBE SER IGUAL O POSTERIOR A LA FECHA INICIAL.INTENTE NUEVAMENTE.")
+                                            continue
+                                    except Exception:
+                                        print("LA FECHA NO EXISTE. INTENTE DENUEVO.")
+                                        continue
+                                    else:
+                                        break
+                                mi_cursor.execute("SELECT n.id_nota, n.fecha_nota, c.nombre_cliente, c.RFC_cliente, c.correo_cliente, n.monto_a_pagar \
+                                                FROM notas n \
+                                                INNER JOIN clientes c ON n.id_cliente = c.id_cliente \
+                                                WHERE n.estado_nota = 'ACTIVO' AND n.fecha_nota BETWEEN ? AND ?", (fecha_inicial, fecha_final))
+
+                                resultados = mi_cursor.fetchall()
+
+                                if resultados:
+                                    print(f"{'ID Nota':<10}| {'Fecha_Nota':<12}| {'Cliente':<25}| {'RFC':<15}| {'Correo':<30}| {'Monto a Pagar':<15}")
+                                    print("*" * 110)
+
+                                    for id_nota, fecha_nota, nombre_cliente, RFC_cliente, correo_cliente, monto_a_pagar in resultados:
+                                        id_nota_str = str(id_nota).ljust(10)
+                                        fecha_nota_str = fecha_nota.strftime('%d-%m-%Y').ljust(12)
+                                        nombre_cliente_str = nombre_cliente.ljust(25)
+                                        RFC_cliente_str = RFC_cliente.ljust(15)
+                                        correo_cliente_str = correo_cliente.ljust(30)
+                                        monto_a_pagar_str = f"{monto_a_pagar:.2f}".ljust(15)
+                                        print(f"{id_nota_str}| {fecha_nota_str}| {nombre_cliente_str}| {RFC_cliente_str}| {correo_cliente_str}| {monto_a_pagar_str}")
+                                        print("-" * 110)
+                                        
+                                    while True:
+                                        print("MENÚ\n[C]SV\n[E]xcel\n[R]egresar")
+                                        opcion = input("¿Desea exportar el reporte? (CSV/Excel/Regresar): ").strip().lower()
+                                        
+                                        fecha_inicio_str = fecha_inicial.strftime("%d-%m-%Y")
+                                        fecha_final_str = fecha_final.strftime("%d-%m-%Y")
+        
+                                        if opcion == "c":
+                                            nombre_archivo = f"ReportePorPeriodo_{fecha_inicio_str}_{fecha_final_str}.csv"
+                                            with open(nombre_archivo, 'w', newline='') as archivo_csv:
+                                                escritor = csv.writer(archivo_csv)
+                                                escritor.writerow(["ID Nota", "Fecha de Nota", "Cliente", "RFC", "Correo", "Monto a Pagar"])
+                                                for resultado in resultados:
+                                                    escritor.writerow(resultado)
+                                                print(f'Se han guardado los datos en {nombre_archivo}')
+                                                break
+                                        elif opcion == "e":
+                                            nombre_archivo = f"ReportePorPeriodo_{fecha_inicio_str}_{fecha_final_str}.xlsx"
+                                            libro = openpyxl.Workbook()
+                                            hoja = libro.active
+                                            hoja.title = "Notas"
+                                            hoja.append(["ID Nota", "Fecha Nota", "Nombre Cliente", "RFC Cliente", "Correo Cliente", "Monto a Pagar"])
+                                            hoja.column_dimensions["A"].width = 10  
+                                            hoja.column_dimensions["B"].width = 30  
+                                            hoja.column_dimensions["C"].width = 30  
+                                            hoja.column_dimensions["D"].width = 15
+                                            hoja.column_dimensions["E"].width = 30
+                                            hoja.column_dimensions["F"].width = 15
+                                            for fila in resultados:
+                                                hoja.append(fila)
+                                            libro.save(nombre_archivo)
+                                            print(f"Reporte exportado a {nombre_archivo}")
+                                            break
+                                        elif opcion == "r":
+                                            break
+                                        else:
+                                            print("Opción no válida. Ingrese 'CSV', 'Excel' o 'Regresar'.")
+                                else:
+                                    print("No se encontraron notas.")
+                                    break
+                                break
+                        except sqlite3.Error as e:
+                            print(e)
+                        except Exception as ex:
+                            print(f"Se produjo el siguiente error: {ex}")
+                    if menu_consulta_nota == "2":
+                        try:
+                            with sqlite3.connect('notas.db', detect_types=sqlite3.PARSE_DECLTYPES | sqlite3.PARSE_COLNAMES) as conn:
+                                mi_cursor = conn.cursor()
+        
+                                mi_cursor.execute("SELECT n.id_nota, n.fecha_nota, c.nombre_cliente\
+                                                    FROM notas n \
+                                                    INNER JOIN clientes c ON n.id_cliente = c.id_cliente \
+                                                    WHERE n.estado_nota = 'ACTIVO' \
+                                                    ORDER BY n.id_nota ASC")
+                                resultados = mi_cursor.fetchall()
+                                if not resultados:
+                                    print("No hay notas activas en el sistema.")
+                                    break
+                                else:
+                                    df = pd.DataFrame(resultados, columns=["Clave", "Fecha", "Nombre"])
+                                    df = df.set_index("Clave")
+                                    print(df)
+                                    
+                                while True:   
+                                    folio_consulta = input("\nIngrese el folio de la nota a consultar/(0 para salir): ").strip()
+                                    
+                                    if folio_consulta == "0":
+                                        break
+                                
+                                    if folio_consulta == "":
+                                        print("EL DATO NO PUEDE OMITIRSE. INTÉNTELO DE NUEVO.")
+                                        continue
+
+                                    try:
+                                        folio_consulta = int(folio_consulta)
+                                    except ValueError:
+                                        print("CARÁCTER NO VÁLIDO. SOLO DÍGITOS NUMÉRICOS SON ACEPTADOS.")
+                                        continue
+                                    mi_cursor.execute("SELECT estado_nota FROM notas WHERE id_nota = ? AND estado_nota = 'ACTIVO'", (folio_consulta,))
+                                    estado_nota = mi_cursor.fetchone()
+                                    if estado_nota is not None:
+                                        estado_nota = estado_nota[0]
+                                    
+                                        if estado_nota == "ACTIVO":
+                                            imprimir_nota(folio_consulta)
+                                            break
+                                    else:
+                                        print("Nota no se encuentra en el sistema")
+                                        continue
+                                break
+                        except sqlite3.Error as e:
+                            print(e)
+                        except Exception as ex:
+                            print(f"Se produjo el siguiente error: {ex}")
+                    if menu_consulta_nota == "3":
+                        print("Fuera del menú de consultas y reportes.")
+                        break
+                    else:
+                        print("OPCIÓN NO VALIDA. INTENTE NUEVAMENTE.")
             elif menu_notas == "5":
                 print("Fuera del menú de notas.")
                 break
