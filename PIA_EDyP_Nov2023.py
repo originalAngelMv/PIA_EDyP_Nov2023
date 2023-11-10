@@ -89,7 +89,140 @@ while True:
     """)
     menu_principal = input("Ingrese una opción: ")
     if menu_principal == "1":
-        pass
+        while True:
+            print("""
+            ╔════════════════════════════╗
+            ║           NOTAS            ║
+            ╠════════════════════════════╢
+            ║ 1. Registrar una nota      ║
+            ║ 2. Cancelar una nota       ║
+            ║ 3. Recuperar una nota      ║
+            ║ 4. Consultas y reportes    ║
+            ║ 5. Volver al menú principal║
+            ╚════════════════════════════╝
+            """)
+            menu_notas = input("Ingrese una opción del menú de Notas: ")
+            if menu_notas == "1":
+                try:
+                    with sqlite3.connect('notas.db') as conn:
+                        mi_cursor = conn.cursor()
+                        mi_cursor.execute("SELECT id_cliente, nombre_cliente FROM clientes WHERE estado_cliente = 'ACTIVO'")
+                        clientes_registrados = mi_cursor.fetchall()
+                        print("\nMenú de Clientes:")
+                        if  clientes_registrados:
+                            print("ID Cliente | Nombre Cliente")
+                            print("-" * 26)  
+
+                            for id_cliente, nombre_cliente in clientes_registrados:
+                                id_cliente_str = str(id_cliente).rjust(10)
+                                nombre_cliente = nombre_cliente.ljust(15)
+                                print(f"{id_cliente_str} | {nombre_cliente}")
+                            else:
+                                print("*"*40)
+                        else:
+                            print("\nNO hay Clientes desponibles...\n")   
+                        mi_cursor.execute("SELECT id_servicio, nombre_servicio, costo_servicio FROM servicios WHERE estado_servicio = 'ACTIVO'")
+                        servicio_registrados = mi_cursor.fetchall()
+                        print("\nMenú de Servicios:")
+                        if servicio_registrados:
+                            print(f"{'ID Servicio':<10} | {'Nombre de Servicio':<30} | {'Costo de Servicio':<15}")
+                            print("-" * 70)
+
+                            for id_servicio, nombre_servicio, costo_servicio in servicio_registrados:
+                                id_servicio_str = str(id_servicio).rjust(11)
+                                nombre_servicio = nombre_servicio.ljust(30)
+                                costo_servicio = f'{costo_servicio:.2f}'.ljust(15)
+                                print(f"{id_servicio_str} | {nombre_servicio} | {costo_servicio}")
+                        else:
+                            print("NO hay Servicios disponibles")
+                        
+                        patron_fecha = r"^\d{2}-\d{2}-\d{4}$"
+                        
+                        pregunta = input("\nDesea una nota? (ENTER PARA SALIR / [S] para seguir a delante)").strip().upper()
+                        if pregunta =="":
+                            break
+                        
+                        while True:
+                            
+                            fecha_ingresada_str = input("\nFecha de la nota (dd-mm-aaaa): ").strip()
+                            
+                            if not fecha_ingresada_str:
+                                print("EL DATO NO PUEDE OMITIRSE. INTENTE DENUEVO.")
+                            elif not re.match(patron_fecha, fecha_ingresada_str):
+                                print("FORMATO DE FECHA INCORRECTO. DEBE SER DD-MM-AAAA")
+                            else:
+                                try:
+                                    fecha_ingresada = datetime.datetime.strptime(fecha_ingresada_str, "%d-%m-%Y")
+                                    if fecha_ingresada > fecha_actual:
+                                        print("LA FECHA NO DEBE SER POSTERIOR A LA FECHA ACTUAL DEL SISTEMA")
+                                    else:
+                                        break
+                                except ValueError:
+                                    print("LA FECHA NO ES VÁLIDA/NO EXISTE. INTENTE DENUEVO.")
+                        while True:
+                            id_cliente = input("\nID del cliente: ").strip()
+                            
+                            if not id_cliente.isdigit():
+                                print("El ID del cliente debe ser un número. Intente nuevamente.")
+                            else:
+                                mi_cursor.execute("SELECT nombre_cliente FROM clientes WHERE id_cliente = ? AND estado_cliente = 'ACTIVO'", (id_cliente,))
+                                cliente_existente = mi_cursor.fetchone()
+                                if cliente_existente:
+                                    break
+                                else:
+                                    print("El cliente con ese ID no existe en la base de datos. Intente nuevamente.")
+                        while True:
+                            mi_cursor.execute("SELECT COUNT(*) FROM notas WHERE id_nota = ?", (id_nota,))
+                            cuenta = mi_cursor.fetchone()[0]
+                            if cuenta == 0:
+                                break
+                            else:
+                                id_nota += 1
+                                
+                        estado = "ACTIVO"
+                        monto_a_pagar = 0.0
+                        cantidad_servicio = 0
+                        while True:
+                            id_servicio = input("\nIngrese el ID_servicio agregar / ( 0 para terminar la captura.): ").strip()
+                            if not id_servicio:
+                                print("EL DATO NO PUEDE OMITIRSE. INTENTE NUEVAMENTE.")
+                                continue
+                            elif id_servicio == "0":
+                                if cantidad_servicio>0:
+                                    break
+                                else:
+                                    print("La nota tiene que tener por lo menos un servicio. Intente nuevamente")
+                            else:
+                                mi_cursor.execute("SELECT nombre_servicio,costo_servicio FROM servicios WHERE id_servicio = ? AND estado_servicio = 'ACTIVO'", (id_servicio,))
+                                servicio_encontrado = mi_cursor.fetchone()
+                                if servicio_encontrado:
+                                    cantidad_servicio+=1
+                                    nombre_servicio, costo_servicio = servicio_encontrado
+                                    monto_a_pagar += costo_servicio
+                                    mi_cursor.execute("INSERT INTO detalles_notas (id_nota, id_servicio) VALUES (?, ?)", (id_nota, id_servicio))
+                                    print("Servicio agregado con éxito")
+                                    continue
+                                else:
+                                    print("El Servicio con ese ID no existe en la base de datos. Intente nuevamente.")
+                        valores = (id_nota,fecha_ingresada,id_cliente,monto_a_pagar,estado)
+                        mi_cursor.execute("INSERT INTO notas VALUES (?,?,?,?,?)",valores)
+                        print("\nNota creada con éxito.")
+                except sqlite3.Error as e:
+                    print(e)
+                except Exception as ex:
+                    print(f"Se produjo el siguiente error: {ex}")
+                imprimir_nota(id_nota)
+            elif menu_notas == "2":
+                pass
+            elif menu_notas == "3":
+                pass
+            elif menu_notas == "4":
+                pass
+            elif menu_notas == "5":
+                print("Fuera del menú de notas.")
+                break
+            else:
+                print("OPCIÓN NO VALIDA. INTENTE NUEVAMENTE.")
     elif menu_principal == "2":
         pass
     elif menu_principal == "3":
