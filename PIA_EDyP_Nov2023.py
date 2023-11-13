@@ -628,7 +628,65 @@ while True:
                         except sqlite3.Error as e:
                             print(e)
                         except Exception as ex:
-                            print(f"Se produjo el siguiente error: {ex}")            
+                            print(f"Se produjo el siguiente error: {ex}")         
+
+            elif menu_clientes == "3":
+                try:
+                    with sqlite3.connect('notas.db') as conn:
+                        mi_cursor = conn.cursor()
+                        mi_cursor.execute("SELECT id_cliente, nombre_cliente FROM clientes WHERE estado_cliente = 'SUSPENDIDO'")
+
+                        todos_los_clientes = mi_cursor.fetchall()
+
+                        if  todos_los_clientes:
+                            print("Todos los clientes suspendidos:")
+                            print(f"\n{'Clave':<10}| {'Nombre':<21}|")
+                            print("-"*35)
+                            for clave,nombre in todos_los_clientes:
+                                clave = str(clave)
+                                clave = clave.ljust(10)
+                                nombre =nombre.ljust(20)
+                                print(f"{clave:<10}| {nombre:<20}|")
+                                print("-"*35)
+                            while True: 
+                                id_cliente = input("Ingrese la clave del cliente que desea recuperar (0 para cancelar): ").strip()
+
+                                if id_cliente == "0":
+                                    print("\nNO SE RECUPERO UN CLIENTE\n")
+                                    break
+                                elif id_cliente == "":
+                                    print("NO SE PUEDE OMITIR EL DATO. INTENTE NUEVAMENTE")
+                                    continue
+                                else:
+                                    mi_cursor.execute("SELECT id_cliente, nombre_cliente,RFC_cliente,correo_cliente FROM clientes WHERE id_cliente = ? AND estado_cliente = 'SUSPENDIDO'", (id_cliente,))
+                                    cliente = mi_cursor.fetchone()
+
+                                    if cliente:
+                                        id_cliente, nombre_cliente,RFC_cliente,correo_cliente = cliente
+                                        print(f"\nID del Cliente: {id_cliente}")
+                                        print(f"Nombre del Cliente: {nombre_cliente}")
+                                        print(f"RFC del Cliente: {RFC_cliente}")
+                                        print(f"Correo del Cliente: {correo_cliente}\n")
+                                        confirmacion = input("¿Desea suspender a este cliente? (S/N): ").strip().upper()
+                                        if confirmacion == "S":
+                                            mi_cursor.execute("UPDATE clientes SET estado_cliente = 'ACTIVO' WHERE id_cliente = ?", (id_cliente,))
+                                            print("El cliente ha sido Recuperado.")
+                                            break
+                                        elif confirmacion == "N":
+                                            print("\nNO SE RECUPERO EL CLIENTE.\n")
+                                            continue
+                                        else:
+                                            print("EL DATO NO SE PUEDE OMITIR. INTENTE NUEVAMENTE.")
+                                    else:
+                                        print("CLIENTE NO ENCONTRADO EN EL SISTEMA. INTENTE NUEVAMENTE.")     
+                        else:
+                            print("No hay clientes  para suspender.")
+                            continue
+                        continue
+                except sqlite3.Error as e:
+                    print(e)
+                except Exception as ex:
+                    print(f"Se produjo el siguiente error: {ex}")
 
     elif menu_principal == "3":
         pass
