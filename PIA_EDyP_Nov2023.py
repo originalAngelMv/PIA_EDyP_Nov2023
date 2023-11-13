@@ -504,7 +504,7 @@ while True:
                 print("OPCIÓN NO VALIDA. INTENTE NUEVAMENTE.")
 
     elif menu_principal == "2":
-         while True:
+        while True:
             print("""
             ╔════════════════════════════╗
             ║         CLIENTES           ║
@@ -517,7 +517,7 @@ while True:
             ╚════════════════════════════╝
             """)
             menu_clientes = input("\nIngrese una opción del menú de clientes: ")
-
+            
             if menu_clientes == "1":
                 try:
                     with sqlite3.connect('notas.db') as conn:
@@ -628,7 +628,7 @@ while True:
                         except sqlite3.Error as e:
                             print(e)
                         except Exception as ex:
-                            print(f"Se produjo el siguiente error: {ex}")         
+                            print(f"Se produjo el siguiente error: {ex}")
 
             elif menu_clientes == "3":
                 try:
@@ -687,7 +687,7 @@ while True:
                     print(e)
                 except Exception as ex:
                     print(f"Se produjo el siguiente error: {ex}")
-
+                    
             elif menu_clientes == "4":
                 while True:
                     print("""
@@ -847,12 +847,77 @@ while True:
                                     print(e)
                                 except Exception as ex:
                                     print(f"Se produjo el siguiente error: {ex}")
+
                             elif listado_cliente == "3":
                                 print("Fuera del menú de listado de clientes registrados.")
                                 break
                             else:
                                 print("OPCIÓN NO VALIDA. INTENTE NUEVAMENTE.")
+
+                    elif menu_consulta_cliente == "2":
+                        try:
+                            with sqlite3.connect('notas.db') as conn:
+                                mi_cursor = conn.cursor()
                                 
+                                clave_buscar = input("Ingrese la clave del cliente que desea buscar: ").strip()
+                                
+                                mi_cursor.execute("SELECT id_cliente, nombre_cliente,RFC_cliente,correo_cliente FROM clientes WHERE id_cliente = ? AND estado_cliente = 'ACTIVO'", (clave_buscar,))
+                                cliente_encontrado = mi_cursor.fetchone()
+
+                                if cliente_encontrado:
+                                    print("\nCliente encontrado:")
+                                    clave, nombre, RFC, correo = cliente_encontrado
+                                    print(f"Clave: {clave}")
+                                    print(f"Nombre: {nombre}")
+                                    print(f"RFC: {RFC}")
+                                    print(f"Correo: {correo}\n")
+                                    break
+                                else:
+                                    print("No se encontró un cliente con esa clave.")
+                        except sqlite3.Error as e:
+                            print(e)
+                        except Exception as ex:
+                            print(f"Se produjo el siguiente error: {ex}")
+
+                    elif menu_consulta_cliente == "3":
+                        try:
+                            with sqlite3.connect('notas.db') as conn:
+                                mi_cursor = conn.cursor()
+                                
+                                nombre_a_buscar = input("Ingrese el nombre del cliente que desea buscar: ").strip().upper()
+                                
+                                mi_cursor.execute("SELECT id_cliente,nombre_cliente,RFC_cliente,correo_cliente FROM clientes WHERE nombre_cliente = ? AND estado_cliente = 'ACTIVO' ", (nombre_a_buscar,))
+                                cliente_encontrado = mi_cursor.fetchone()
+
+                                if cliente_encontrado:
+                                    print("\nCliente encontrado:")
+                                    clave, nombre, RFC, correo = cliente_encontrado
+                                    print(f"Clave: {clave}")
+                                    print(f"Nombre: {nombre}")
+                                    print(f"RFC: {RFC}")
+                                    print(f"Correo: {correo}\n")
+                                    break
+                                else:
+                                    print("No se encontró un cliente con ese nombre.")
+                                    break
+                        except sqlite3.Error as e:
+                            print(e)
+                        except Exception as ex:
+                            print(f"Se produjo el siguiente error: {ex}")
+
+                    elif menu_consulta_cliente == "4":
+                        print("Fuera del menú de consultas y reportes.")
+                        break    
+                    else:
+                        print("OPCIÓN NO VALIDA. INTENTE NUEVAMENTE.") 
+                          
+            elif menu_clientes == "5":
+                print("Fuera del menú de clientes.")
+                break
+            else:
+                print("OPCIÓN NO VALIDA. INTENTE NUEVAMENTE.")
+
+
     elif menu_principal == "3":
         pass
     elif menu_principal == "4":
