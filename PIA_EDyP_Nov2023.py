@@ -910,7 +910,7 @@ while True:
                         break    
                     else:
                         print("OPCIÓN NO VALIDA. INTENTE NUEVAMENTE.") 
-                          
+
             elif menu_clientes == "5":
                 print("Fuera del menú de clientes.")
                 break
@@ -919,7 +919,179 @@ while True:
 
 
     elif menu_principal == "3":
-        pass
+    elif menu_principal == "3":
+       while True:
+            print("""
+            ╔════════════════════════════╗
+            ║         SERVICIOS          ║
+            ╠════════════════════════════╣
+            ║ 1. Agregar un servicio.    ║
+            ║ 2. Suspender un servicio.  ║
+            ║ 3. Recuperar un servicio.  ║
+            ║ 4. Consultas y reportes.   ║
+            ║ 5. Volver al menú principal║
+            ╚════════════════════════════╝
+            """)
+            menu_servicios = input("Ingrese una opción del menú de servicios: ")
+            
+            if menu_servicios == "1":
+                try:
+                    with sqlite3.connect('notas.db') as conn:
+                        mi_cursor = conn.cursor() 
+                        while True:
+                            estado_servicio = "ACTIVO"
+                            nombre_servicio = input("\nNombre del servicio/ ([S] para salir): ").strip().upper()
+                            if nombre_servicio == "":
+                                print("EL DATO NO PUEDE OMITIRSE. INTENTE DENUEVO.")
+                                continue
+                            if nombre_servicio == "S":
+                                break
+
+                            while True:
+                                
+                                costo_servicio = input("\nCosto del servicio: ").strip()
+                                if costo_servicio == "":
+                                    print("EL DATO NO PUEDE OMITIRSE. INTENTE DENUEVO.")
+                                    continue
+                                
+                                try:
+                                    costo_servicio = float(costo_servicio)
+                                    if costo_servicio <= 0:
+                                        print("EL COSTO DEBE SER MAYOR A 0 PESOS. INTENTE DENUEVO")
+                                        continue
+                                    else:
+                                        
+                                        valores_servicios = (nombre_servicio,costo_servicio,estado_servicio)
+                                        mi_cursor.execute("INSERT INTO servicios (nombre_servicio,costo_servicio,estado_servicio) VALUES(?,?,?);",valores_servicios)
+                                        print("Todo salio bien.")
+                                        break
+                                except ValueError:
+                                    print("SE INGRESÓ UN CARÁCTER NO NUMÉRICO. INTENTE DENUEVO ")  
+                            break 
+                except sqlite3.Error as e:
+                    print(e)
+                except:
+                    print(f"Se produjo el siguiente error: {sys.exc_info()[0]}")
+                finally:
+                    if (conn):
+                        conn.close()
+            elif menu_servicios == "2":
+                try:
+                    with sqlite3.connect('notas.db') as conn:
+                        mi_cursor = conn.cursor()
+                        mi_cursor.execute("SELECT id_servicio, nombre_servicio FROM servicios WHERE estado_servicio = 'ACTIVO'")
+
+                        todos_los_servicios = mi_cursor.fetchall()
+
+                        if  todos_los_servicios:
+                            print("Todos los servicios registrados:")
+                            print(f"\n{'Clave':<10}| {'Nombre':<21}|")
+                            print("-"*35)
+                            for clave,nombre in todos_los_servicios:
+                                clave = str(clave)
+                                clave = clave.ljust(10)
+                                nombre =nombre.ljust(20)
+                                print(f"{clave:<10}| {nombre:<20}|")
+                                print("-"*35)
+                            while True: 
+                                id_servicio = input("Ingrese la clave del servicio que desea suspender (0 para cancelar): ").strip()
+
+                                if id_servicio == "0":
+                                    print("\nNO SE SUSPENDIO UN SERVICIO\n")
+                                    break
+                                elif id_servicio == "":
+                                    print("NO SE PUEDE OMITIR EL DATO. INTENTE NUEVAMENTE")
+                                    continue
+                                else:
+                                    mi_cursor.execute("SELECT id_servicio,nombre_servicio,costo_servicio FROM servicios WHERE id_servicio = ? AND estado_servicio = 'ACTIVO'", (id_servicio,))
+                                    servicio = mi_cursor.fetchone()
+
+                                    if servicio:
+                                        id_servicio, nombre_servicio,costo_servicio = servicio
+                                        print("-"*30)
+                                        print(f"\nID del Servicio: {id_servicio}")
+                                        print(f"Nombre del Servicio: {nombre_servicio}")
+                                        print(f"Costo del Servicio: {costo_servicio}")
+                                        print("-"*30)
+                                        confirmacion = input("\n¿Desea suspender este servicio? (S/N): ").strip().upper()
+                                        if confirmacion == "S":
+                                            mi_cursor.execute("UPDATE servicios SET estado_servicio = 'SUSPENDIDO' WHERE id_servicio = ?", (id_servicio,))
+                                            print("El servicio ha sido suspendido.\n")
+                                            break
+                                        elif confirmacion == "N":
+                                            print("\nNO SE SUSPENDIO EL SERVICIO.\n")
+                                            continue
+                                        else:
+                                            print("EL DATO NO SE PUEDE OMITIR. INTENTE NUEVAMENTE.")
+                                    else:
+                                        print("SERVICIO NO ENCONTRADO EN EL SISTEMA. INTENTE NUEVAMENTE.")     
+                        else:
+                            print("No hay Servicios  para suspender.")
+                            continue
+                        continue
+                except sqlite3.Error as e:
+                    print(e)
+                except Exception as ex:
+                    print(f"Se produjo el siguiente error: {ex}")
+            elif menu_servicios == "3":
+                try:
+                    with sqlite3.connect('notas.db') as conn:
+                        mi_cursor = conn.cursor()
+                        mi_cursor.execute("SELECT id_servicio, nombre_servicio FROM servicios WHERE estado_servicio = 'SUSPENDIDO'")
+
+                        todos_los_servicios = mi_cursor.fetchall()
+
+                        if  todos_los_servicios:
+                            print("Todos los servicios suspendidos:")
+                            print(f"\n{'Clave':<10}| {'Nombre':<21}|")
+                            print("-"*35)
+                            for clave,nombre in todos_los_servicios:
+                                clave = str(clave)
+                                clave = clave.ljust(10)
+                                nombre =nombre.ljust(20)
+                                print(f"{clave:<10}| {nombre:<20}|")
+                                print("-"*35)
+                            while True: 
+                                id_servicio = input("Ingrese la clave del servicio que desea recuperar (0 para cancelar): ").strip()
+
+                                if id_servicio == "0":
+                                    print("\nNO SE SUSPENDIO UN SERVICIO\n")
+                                    break
+                                elif id_servicio == "":
+                                    print("NO SE PUEDE OMITIR EL DATO. INTENTE NUEVAMENTE")
+                                    continue
+                                else:
+                                    mi_cursor.execute("SELECT id_servicio,nombre_servicio,costo_servicio FROM servicios WHERE id_servicio = ? AND estado_servicio = 'SUSPENDIDO'", (id_servicio,))
+                                    servicio = mi_cursor.fetchone()
+
+                                    if servicio:
+                                        id_servicio, nombre_servicio,costo_servicio = servicio
+                                        print("-"*30)
+                                        print(f"\nID del Servicio: {id_servicio}")
+                                        print(f"Nombre del Servicio: {nombre_servicio}")
+                                        print(f"Costo del Servicio: {costo_servicio}")
+                                        print("-"*30)
+                                        confirmacion = input("\n¿Desea suspender este servicio? (S/N): ").strip().upper()
+                                        if confirmacion == "S":
+                                            mi_cursor.execute("UPDATE servicios SET estado_servicio = 'ACTIVO' WHERE id_servicio = ?", (id_servicio,))
+                                            print("El servicio ha sido recuperado.\n")
+                                            break
+                                        elif confirmacion == "N":
+                                            print("\nNO SE RECUPERO EL SERVICIO.\n")
+                                            continue
+                                        else:
+                                            print("EL DATO NO SE PUEDE OMITIR. INTENTE NUEVAMENTE.")
+                                    else:
+                                        print("SERVICIO NO ENCONTRADO EN EL SISTEMA. INTENTE NUEVAMENTE.")     
+                        else:
+                            print("No hay Servicios  para recuperar.")
+                            continue
+                        continue
+                except sqlite3.Error as e:
+                    print(e)
+                except Exception as ex:
+                    print(f"Se produjo el siguiente error: {ex}")
+
     elif menu_principal == "4":
         while True:
             print("""
