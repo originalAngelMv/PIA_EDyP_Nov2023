@@ -517,7 +517,61 @@ while True:
             ╚════════════════════════════╝
             """)
             menu_clientes = input("\nIngrese una opción del menú de clientes: ")
-                  
+
+            if menu_clientes == "1":
+                try:
+                    with sqlite3.connect('notas.db') as conn:
+                        mi_cursor = conn.cursor()
+                        while True:
+                            nombre_cliente = input("\nNombre del cliente([S] para salir): ").strip().upper()
+    
+                            if nombre_cliente == "":
+                                print("EL DATO NO PUEDE OMITIRSE. INTENTE DENUEVO.")
+                            elif any(char.isdigit() for char in nombre_cliente):
+                                print("EL NOMBRE NO PUEDE CONTENER DÍGITOS. INTENTE NUEVAMENTE.")
+                            elif nombre_cliente.lower() == "s":
+                                break
+                            else:
+                                while True:
+                                    RFC_cliente = input("\nIngrese un RFC (por ejemplo: Persona física: XEXT990101NI4 /Persona moral: EXT990101NI4 ): ").strip().upper()
+                                    
+                                    if not RFC_cliente:
+                                        print("EL DATO NO PUEDE OMITIRSE. INTENTE DENUEVO.")
+                                    elif not re.match(r'^[A-Z]{3,4}[0-9]{6}[A-Z0-9]{3}$', RFC_cliente):
+                                        print("EL RFC INGRESADO NO TIENE EL FORMATO CORRECTO. INTENTE NUEVAMENTE.")
+                                    else:
+                                        try:
+                                            if len(RFC_cliente) == 13:
+                                                fecha_rfc = datetime.datetime.strptime(RFC_cliente[4:10], '%y%m%d')
+                                            elif len(RFC_cliente) == 12:
+                                                fecha_rfc = datetime.datetime.strptime(RFC_cliente[3:9], '%y%m%d')
+                                        except ValueError:
+                                            print("LA FECHA EN EL RFC NO ES VÁLIDA. INTENTE NUEVAMENTE.")
+                                            continue
+                                        break
+                                while True:
+                                    correo_cliente = input("\nIngrese su correo electrónico : ").strip()
+
+                                    if not correo_cliente:
+                                        print("EL DATO NO PUEDE OMITIRSE. INTENTE DENUEVO.")
+                                    elif not re.match(r'^[a-zA-Z0-9._+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$', correo_cliente):
+                                        print("EL CORREO ELECTRÓNICO TIENE UN FORMATO INCORRECTO/NO EXISTE. INTENTE NUEVAMENTE")  
+                                    else:
+                                        break
+                            
+                            estado_cliente = "ACTIVO"
+                            valores = (nombre_cliente,RFC_cliente,correo_cliente,estado_cliente)
+                            mi_cursor.execute("INSERT INTO clientes (nombre_cliente,RFC_cliente,correo_cliente,estado_cliente) VALUES(?,?,?,?)",valores)
+                            print("Todo salio bien.")
+                            break                
+                except sqlite3.Error as e:
+                    print(e)
+                except:
+                    print(f"Se produjo el siguiente error: {sys.exc_info()[0]}")
+                finally:
+                    if (conn):
+                        conn.close()            
+
     elif menu_principal == "3":
         pass
     elif menu_principal == "4":
