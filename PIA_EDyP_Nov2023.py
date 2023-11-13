@@ -688,6 +688,95 @@ while True:
                 except Exception as ex:
                     print(f"Se produjo el siguiente error: {ex}")
 
+            elif menu_clientes == "4":
+                while True:
+                    print("""
+                    ╔════════════════════════════════════╗
+                    ║        CONSULTAS Y REPORTES        ║
+                    ╟────────────────────────────────────╢
+                    ║ 1. Listado de clientes registrados.║
+                    ║ 2. Búsqueda por clave.             ║
+                    ║ 3. Búsqueda por nombre.            ║ 
+                    ║ 4. Volver al menú de clientes.     ║
+                    ╚════════════════════════════════════╝
+                    """)
+                    menu_consulta_cliente = input("Ingrese una opción del menú de consulta: ")
+                    if menu_consulta_cliente == "1":
+                        while True:
+                            print("\nMenú de Listado de clientes registrados.\n1. Ordenado por clave.\n2. Ordenado por nombre.\n3. Volver al menú anterior.")
+                            listado_cliente = input("\nIngrese una opción de listado: ")
+                            
+                            if listado_cliente == "1":
+                                try:
+                                    with sqlite3.connect('notas.db') as conn:
+                                        mi_cursor = conn.cursor()
+                                        
+                                        mi_cursor.execute("SELECT id_cliente, nombre_cliente, RFC_cliente, correo_cliente, estado_cliente FROM clientes WHERE estado_cliente = 'ACTIVO' ORDER BY id_cliente")
+
+                                        todos_los_clientes = mi_cursor.fetchall()
+
+                                        if not todos_los_clientes:
+                                            print("No hay clientes registrados para mostrar.")
+                                            break
+                                        else:
+                                            print("Reporte de todos los clientes ordenados por clave:")
+                                            print(f"\n{'Clave':<10}| {'Nombre':<21}| {'RFC':<18}| {'Correo':<30}|")
+                                            print("-"*80)
+                                            for clave,nombre,RFC,correo,estado_cliente in todos_los_clientes:
+                                                clave = str(clave)
+                                                clave = clave.ljust(10)
+                                                nombre =nombre.ljust(20)
+                                                correo = correo.ljust(30)
+                                                print(f"{clave:<10}| {nombre:<20}| {RFC:<18}| {correo:<30}|")
+                                                print("-"*80)
+                                            while True:
+                                                print("MENÚ\n[C]SV\n[E]xcel\n[R]egresar")
+                                                opcion = input("¿Desea exportar el reporte? (CSV/Excel/Regresar): ").strip().lower()
+                                                
+                                                fecha_actual = datetime.datetime.now().strftime("%d_%m_%Y")
+                
+                                                if opcion == "c":
+                                                    
+                                                    nombre_archivo = f"ReporteClientesActivosPorClave_{fecha_actual}.csv"
+                                                    try:
+                                                        with open(nombre_archivo, 'w', newline='') as archivo_csv:
+                                                            escritor = csv.writer(archivo_csv)
+                                                            escritor.writerow(["Clave", "Nombre", "RFC", "Correo"])
+                                                            for clave,nombre,RFC,correo in todos_los_clientes:
+                                                                escritor.writerow([clave,nombre,RFC,correo])
+                                                        print(f'Se han guardado los datos en {nombre_archivo}')
+                                                    except Exception as e:
+                                                        print(f'Error al guardar los datos en el archivo CSV: {e}')
+                                                    break
+                                                elif opcion == "e":
+                                                    nombre_archivo = f"ReporteClientesActivosPorClave_{fecha_actual}.xlsx"
+                                                    libro = openpyxl.Workbook()
+                                                    hoja = libro.active
+                                                    hoja.title = "Clientes"
+
+                                                    hoja.append(["Clave", "Nombre", "RFC", "Correo"])
+
+                                                    for cliente in todos_los_clientes:
+                                                        hoja.append(cliente)
+                                                    hoja.column_dimensions["A"].width = 10  
+                                                    hoja.column_dimensions["B"].width = 30  
+                                                    hoja.column_dimensions["C"].width = 20  
+                                                    hoja.column_dimensions["D"].width = 30  
+
+                                                    libro.save(nombre_archivo)
+
+                                                    print(f"Reporte exportado a {nombre_archivo}")
+                                                    break
+                                                elif opcion == "r":
+                                                    break
+                                                else:
+                                                    print("Opción no válida. Ingrese 'CSV', 'Excel' o 'Regresar'.")
+                                        break       
+                                except sqlite3.Error as e:
+                                    print(e)
+                                except Exception as ex:
+                                    print(f"Se produjo el siguiente error: {ex}")
+
     elif menu_principal == "3":
         pass
     elif menu_principal == "4":
