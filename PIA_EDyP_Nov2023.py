@@ -1595,6 +1595,11 @@ while True:
                 print("\nFuera del menu de estadísticas...\n")
                 break
     elif menu_principal == "5":
-        pass
+        
+        if input("SEGURO DESEA SALIR DEL PROGRAMA? (S/N o Enter para volver a menu principal):\n ").upper()=="S":
+            print("Fin del programa.")
+            break
+        else:
+            continue 
     else:
         print("OPCIÓN NO VALIDA. INTENTE NUEVAMENTE.")
