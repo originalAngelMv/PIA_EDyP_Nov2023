@@ -502,8 +502,22 @@ while True:
                 break
             else:
                 print("OPCIÓN NO VALIDA. INTENTE NUEVAMENTE.")
+
     elif menu_principal == "2":
-        pass
+         while True:
+            print("""
+            ╔════════════════════════════╗
+            ║         CLIENTES           ║
+            ╠════════════════════════════╣
+            ║ 1. Agregar un cliente.     ║
+            ║ 2. Suspender a un cliente. ║
+            ║ 3. Recuperar a un cliente. ║
+            ║ 4. Consultas y reportes.   ║
+            ║ 5. Volver al menú principal║
+            ╚════════════════════════════╝
+            """)
+            menu_clientes = input("\nIngrese una opción del menú de clientes: ")
+                  
     elif menu_principal == "3":
         pass
     elif menu_principal == "4":
